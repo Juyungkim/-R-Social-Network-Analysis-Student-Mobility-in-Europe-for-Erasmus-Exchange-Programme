@@ -1,0 +1,461 @@
+---
+title: 'Social Network Analysis: Student Mobility in Europe for Erasmus Exchange Programme'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+library(igraph)
+library(dplyr)
+library(gplots)
+
+```
+
+In this project I will generate a number of networks, where nodes are the universities and edges are the number of students from University A who went to study at University B.
+
+Specifically, I will make the following six networks:
+
+-  “main” network: A weighted, directed network based on the main_el file, representing all student exchanges in 2013-2014 between the universities included in the the Kosztyán et al (2021) dataset.
+
+-  Four “subject” networks: one from Humanities and Arts (based on hum_el), one for social socences, Business and Law (based on soc_el), one for socence, Mathematics and Computing (based on soc_el), and one for Engineering, Manufacturing and Construction (based on eng_el).
+
+-  “reduced” network: The “main” network reduced to only include edges where at least 5 students went from University A to University B, and where any universities who as a result of this removal of edges are isolates are removed.
+
+Data files:
+- main_el.csv
+- hum_el.csv
+- soc_el.csv
+- soc_el.csv
+- and eng_el.csv
+- HEI_metadata.csv
+
+```{r}
+main_el<- read.csv("main_el.csv", header = TRUE, as.is = TRUE)
+hum_el <- read.csv("hum_el.csv", header = TRUE, as.is = TRUE)
+soc_el <- read.csv("soc_el.csv", header = TRUE, as.is = TRUE)
+sci_el<- read.csv("sci_el.csv", header = TRUE, as.is = TRUE)
+eng_el<- read.csv("eng_el.csv", header = TRUE, as.is = TRUE)
+meta<- read.csv("HEI_metadata.csv", header = TRUE, as.is = TRUE)
+
+meta_n<- meta%>% select(Erasmus.ID, Region, Latitude, Longitude, X2013.Ranking, Total.academic.staff..FTE.,POI_count,University, City)
+
+main_el
+
+reduced<- filter(main_el, n >=5)
+reduced
+
+meta_n<- meta%>% select(Erasmus.ID, Region, Latitude, Longitude, X2013.Ranking, Total.academic.staff..FTE.,POI_count,University, City)
+
+MetaData_New
+Main
+
+Reduced<- filter(Main, n >=5)
+Reduced
+
+```
+# making the data as an igraph object
+```{r}
+require(igraph)
+main.n <- graph.data.frame(main_el, directed =TRUE)
+hum.n <- graph.data.frame(hum_el, directed =TRUE)
+soc.n <- graph.data.frame(soc_el, directed =TRUE)
+sci.n  <- graph.data.frame(sci_el, directed =TRUE)
+eng.n <- graph.data.frame(eng_el, directed =TRUE)
+summary(main.n)
+reduced.n <- graph.data.frame(reduced, directed =TRUE, vertices = meta_n)
+
+```
+
+#1
+
+```{r}
+# 1-1) Humanities and arts network
+# Calculating graph density, Average path length, Transitivity and Reciprocity 
+hum.density <- graph.density(hum.n)
+hum.apl<-average.path.length(hum.n)
+hum.transitivity <-transitivity(hum.n, type='global')
+hum.reciprocity <-reciprocity(hum.n)
+
+# Creating 100 random networks with ther Erdös-Rényi model and calculating the average density, average path length, transitivity and reciprocity
+hum.r <- lapply(rep(1, 100), function(x)
+sample_gnm(n=vcount(hum.n), m= ecount(hum.n), directed=T))
+
+hum.r.den <- sapply(hum.r, graph.density)
+hum.r.apl <- sapply(hum.r, average.path.length, directed=T)
+hum.r.trans <- sapply(hum.r, transitivity)
+hum.r.reci <- sapply(hum.r, reciprocity)
+
+
+hum.df <- data.frame(c('Humanities & Arts','Erdös-Rényi_Humanities & Arts'),
+                        c(graph.density(hum.n), mean(hum.r.den)),
+                        c(average.path.length(hum.n), mean(hum.r.apl)), 
+                        c(transitivity(hum.n), mean(hum.r.trans)),
+                        c(reciprocity(hum.n), mean(hum.r.reci)))
+                        
+colnames(hum.df) <- c('Network','Density', 'Average path length', 'Transitivity', 'Reciprocity' )
+hum.df
+
+# 1-2) social sciences, business and law network
+# Calculating graph density, Average path length, Transitivity and Reciprocity 
+soc.density <- graph.density(soc.n)
+soc.apl<-average.path.length(soc.n)
+soc.transitivity <-transitivity(soc.n, type='global')
+soc.reciprocity <-reciprocity(soc.n)
+
+# Creating 100 random networks with ther Erdös-Rényi model and calculating the average density, average path length, transitivity and reciprocity
+soc.r <- lapply(rep(1, 100), function(x)
+sample_gnm(n=vcount(soc.n), m= ecount(soc.n), directed=T))
+
+soc.r.den <- sapply(soc.r, graph.density)
+soc.r.apl <- sapply(soc.r, average.path.length, directed=T)
+soc.r.trans <- sapply(soc.r, transitivity)
+soc.r.reci <- sapply(soc.r, reciprocity)
+
+
+soc.df <- data.frame(c('Humanities & Arts','Erdös-Rényi_Humanities & Arts'),
+                        c(graph.density(soc.n), mean(soc.r.den)),
+                        c(average.path.length(soc.n), mean(soc.r.apl)), 
+                        c(transitivity(soc.n), mean(soc.r.trans)),
+                        c(reciprocity(soc.n), mean(soc.r.reci)))
+                        
+colnames(soc.df) <- c('Network','Density', 'Average path length', 'Transitivity', 'Reciprocity' )
+soc.df
+
+# 1-3) Science, mathematics and computing network
+# Calculating graph density, Average path length, Transitivity and Reciprocity 
+sci.density <- graph.density(sci.n)
+sci.apl<-average.path.length(sci.n)
+sci.transitivity <-transitivity(sci.n, type='global')
+sci.reciprocity <-reciprocity(sci.n)
+
+# Creating 100 random networks with ther Erdös-Rényi model and calculating the average density, average path length, transitivity and reciprocity
+sci.r <- lapply(rep(1, 100), function(x)
+sample_gnm(n=vcount(sci.n), m= ecount(sci.n), directed=T))
+
+sci.r.den <- sapply(sci.r, graph.density)
+sci.r.apl <- sapply(sci.r, average.path.length, directed=T)
+sci.r.trans <- sapply(sci.r, transitivity)
+sci.r.reci <- sapply(sci.r, reciprocity)
+
+
+sci.df <- data.frame(c('Humanities & Arts','Erdös-Rényi_Humanities & Arts'),
+                        c(graph.density(sci.n), mean(sci.r.den)),
+                        c(average.path.length(sci.n), mean(sci.r.apl)), 
+                        c(transitivity(sci.n), mean(sci.r.trans)),
+                        c(reciprocity(sci.n), mean(sci.r.reci)))
+                        
+colnames(sci.df) <- c('Network','Density', 'Average path length', 'Transitivity', 'Reciprocity' )
+sci.df
+
+# 1-4) Engineering, manufacturing and construction network
+# Calculating graph density, Average path length, Transitivity and Reciprocity 
+eng.density <- graph.density(eng.n)
+eng.apl<-average.path.length(eng.n)
+eng.transitivity <-transitivity(eng.n, type='global')
+eng.reciprocity <-reciprocity(eng.n)
+
+# Creating 100 random networks with their Erdös-Rényi model and calculating the average density, average path length, transitivity and reciprocity
+eng.r <- lapply(rep(1, 100), function(x)
+sample_gnm(n=vcount(eng.n), m= ecount(eng.n), directed=T))
+
+eng.r.den <- sapply(eng.r, graph.density)
+eng.r.apl <- sapply(eng.r, average.path.length, directed=T)
+eng.r.trans <- sapply(eng.r, transitivity)
+eng.r.reci <- sapply(eng.r, reciprocity)
+
+
+eng.df <- data.frame(c('Humanities & Arts','Erdös-Rényi_Humanities & Arts'),
+                        c(graph.density(eng.n), mean(eng.r.den)),
+                        c(average.path.length(eng.n), mean(eng.r.apl)), 
+                        c(transitivity(eng.n), mean(eng.r.trans)),
+                        c(reciprocity(eng.n), mean(eng.r.reci)))
+                        
+colnames(eng.df) <- c('Network','Density', 'Average path length', 'Transitivity', 'Reciprocity' )
+eng.df
+
+# All subject networks  with their Erdös-Rényi models
+subject.bind <-rbind(hum.df, soc.df, sci.df, eng.df)
+subject.bind
+
+
+
+```
+
+#2
+
+```{r}
+#2-1) Calculating the in-degree centrality of the universities
+
+# 2) Extracting only the necessary metadata 
+V(main.n)$University = as.character(meta_n$University[match(V(main.n)$name, meta_n$Erasmus.ID)])
+V(main.n)$City <- meta_n$City[match(V(main.n)$name, meta_n$Erasmus.ID)]
+City<-V(main.n)$City
+University<- V(main.n)$University
+summary(main.n)
+
+indeg <- degree(main.n, mode="in")
+summary(indeg)
+colors<-rainbow(max(5))
+
+hist(indeg, breaks=20, main="In-Degree Centrality Histogram")
+color <- c("green","red","blue","orange","purple")
+
+abline(v=indeg["UK LONDON015"], col=colors[1])
+abline(v=indeg["UK LONDON017"], col=colors[2])
+abline(v=indeg["UK LONDON020"], col=colors[3])
+abline(v=indeg["UK LONDON029"], col=colors[4])
+abline(v=indeg["UK LONDON031"], col=colors[5])
+legend("topright", legend=c("Imperial", "King's", "LSE", "City University", "Queen Mary"),col = colors, pch = 19, title = "London Universities/Colleges")
+
+#2-2) Creating a dataframe for the in-degree centrality measure for each university and calculating the maximum value and the hub centrality of universities
+in.cent<-data.frame("in-degree centrality"=V(main.n)$University,University,City,indeg)
+max(in.cent$indeg)
+hub <-hub_score(main.n, scale = TRUE)
+summary(hub)
+hist(hub$vector,breaks=20)
+
+
+#2-3) Creating a dataframe for the hub centrality measure for each university and calculating the maximum value
+hub.cent<-data.frame("Hub Centrality"=V(main.n)$University,University,hub)
+max(hub.cent$vector)
+
+
+#2-4) Calculating the authority centrality 
+authority<- authority_score(main.n, scale = TRUE, weights=E(main.n)$n)
+summary(authority)
+hist(authority$vector,breaks=20, main="Authority Centrality Histogram")
+
+abline(v=authority$vector["UK LONDON015"], col=colors[1])
+abline(v=authority$vector["UK LONDON017"], col=colors[2])
+abline(v=authority$vector["UK LONDON020"], col=colors[3])
+abline(v=authority$vector["UK LONDON029"], col=colors[4])
+abline(v=authority$vector["UK LONDON031"], col=colors[5])
+legend("topright", legend=c("Imperial", "King's", "LSE", "City University", "Queen Mary"),col = colors, pch = 19, title = "London Universities/Colleges")
+
+#2-5) Creating a dataframe for the authority centrality measure for each university and calculating the maximum value
+authority.cent<-data.frame("Auhority Centrality"=V(main.n)$University,University,authority)
+max(authority.cent$vector)
+
+
+```
+
+#3
+
+```{r}
+library(scales)
+
+summary(hum.n)
+summary(soc.n)
+summary(sci.n)
+summary(eng.n)
+
+# 3-1) Humanities & Arts network
+# Calculating the in-degree and degree distribution of Humanities and Arts network and deleting in-degree=0 and in-degrees with proportion=0 .
+ind.hum<- degree(hum.n, mode='in')
+prob.hum<- degree.distribution(hum.n, mode='in')
+prob.hum <- prob.hum [-1] 
+nonzero.p.hum <- which(prob.hum!=0)
+prob.hum <- prob.hum[nonzero.p.hum]
+
+# Creating a vector including all non-zero-probability in-degrees, looping over the probability vector and summing all values
+indeg.hum <- 1:max(ind.hum)
+indeg.hum <- indeg.hum[nonzero.p.hum]
+ccdf.hum<- NULL
+for (i in 1:length(prob.hum)) {
+  ccdf.hum[i] = sum( prob.hum[ seq(i, length(prob.hum)) ] )
+}
+# 3-2) Social sciences, business and law network 
+# Calculating the in-degree and degree distribution of Humanities and Arts network and deleting in-degree=0 and in-degrees with proportion=0 .
+ind.soc<- degree(soc.n, mode='in')
+prob.soc<- degree.distribution(soc.n, mode='in')
+prob.soc <- prob.soc [-1] 
+nonzero.p.soc <- which(prob.soc!=0)
+prob.soc <- prob.soc[nonzero.p.soc]
+
+#Creating a vector including all non-zero-probability in-degrees, looping over the probability vector and summing all values
+indeg.soc <- 1:max(ind.soc)
+indeg.soc <- indeg.soc[nonzero.p.soc]
+ccdf.soc<- NULL
+for (i in 1:length(prob.soc)) {
+  ccdf.soc[i] = sum( prob.soc[ seq(i, length(prob.soc)) ] )
+}
+
+
+# 3-3) Science, mathematics and computing network
+# Calculating the in-degree and degree distribution of Humanities and Arts network and deleting in-degree=0 and in-degrees with proportion=0 .
+ind.sci<- degree(sci.n, mode='in')
+prob.sci<- degree.distribution(sci.n, mode='in')
+prob.sci <- prob.sci [-1] 
+nonzero.p.sci <- which(prob.sci!=0)
+prob.sci <- prob.sci[nonzero.p.sci]
+
+# Creating a vector including all non-zero-probability in-degrees, looping over the probability vector and summing all values
+indeg.sci <- 1:max(ind.sci)
+indeg.sci <- indeg.sci[nonzero.p.sci]
+ccdf.sci<- NULL
+for (i in 1:length(prob.sci)) {
+  ccdf.sci[i] = sum( prob.sci[ seq(i, length(prob.sci)) ] )
+}
+
+# 3-4) Engineering, manufacturing and construction network
+# Calculating the in-degree and degree distribution of Humanities and Arts network and deleting in-degree=0 and in-degrees with proportion=0 .
+ind.eng<- degree(eng.n, mode='in')
+prob.eng<- degree.distribution(eng.n, mode='in')
+prob.eng <- prob.eng [-1] 
+nonzero.p.eng <- which(prob.eng!=0)
+prob.eng <- prob.eng[nonzero.p.eng]
+
+# Creating a vector including all non-zero-probability in-degrees, looping over the probability vector and summing all values
+indeg.eng <- 1:max(ind.eng)
+indeg.eng <- indeg.eng[nonzero.p.eng]
+ccdf.eng<- NULL
+for (i in 1:length(prob.eng)) {
+  ccdf.eng[i] = sum( prob.eng[ seq(i, length(prob.eng)) ] )
+}
+
+
+# 3-5) Plot all the four subject networks together
+par(mfrow=c(1,4))
+plot(ccdf.hum ~ indeg.hum, xlab='Indegree d', ylab='Complementary CDF P(X>=d)', log='xy', col='yellow', main= "Humanitites & Arts")
+plot(ccdf.soc ~ indeg.soc, xlab='Indegree d', ylab='Complementary CDF P(X>=d)', log='xy', col='blue', main= "Social Science")
+plot(ccdf.sci ~ indeg.sci, xlab='Indegree d', ylab='Complementary CDF P(X>=d)', log='xy', col='purple', main= "Science")
+plot(ccdf.eng ~ indeg.eng, xlab='Indegree d', ylab='Complementary CDF P(X>=d)', log='xy', col='red', main= "Engineering")
+
+##Configuration model
+# 3-6) Humanities and arts network
+
+outd.hum <- degree(hum.n, mode='out')
+config.hum <- sample_degseq(out.deg = outd.hum, in.deg = ind.hum, method = "simple")
+est.hum <- data.frame(c('Humanities & Arts', 'Humanities & ArtsConfiguration Configuration'), 
+                        c(graph.density(hum.n), graph.density(config.hum)),
+                        c(average.path.length(hum.n), average.path.length(config.hum)), 
+                        c(transitivity(hum.n), transitivity(config.hum)),
+                        c(reciprocity(hum.n),reciprocity(config.hum)))
+colnames(est.hum) <- c('Network', 'Density', 'Average path length', 'Transitivity', 'Reciprocity')
+est.hum
+
+# 3-7) Social sciences, business and law network
+outd.soc <- degree(soc.n, mode='out')
+config.soc <- sample_degseq(out.deg = outd.soc, in.deg = ind.soc, method = "simple")
+est.soc <- data.frame(c('Humanities & Arts', 'Humanities & ArtsConfiguration Configuration'), 
+                        c(graph.density(soc.n), graph.density(config.soc)),
+                        c(average.path.length(soc.n), average.path.length(config.soc)), 
+                        c(transitivity(soc.n), transitivity(config.soc)),
+                        c(reciprocity(soc.n),reciprocity(config.soc)))
+colnames(est.soc) <- c('Network', 'Density', 'Average path length', 'Transitivity', 'Reciprocity')
+est.soc
+
+# 3-8) Science, mathematics and computing network
+outd.sci <- degree(sci.n, mode='out')
+config.sci <- sample_degseq(out.deg = outd.sci, in.deg = ind.sci, method = "simple")
+est.sci <- data.frame(c('Humanities & Arts', 'Humanities & ArtsConfiguration Configuration'), 
+                        c(graph.density(sci.n), graph.density(config.sci)),
+                        c(average.path.length(sci.n), average.path.length(config.sci)), 
+                        c(transitivity(sci.n), transitivity(config.sci)),
+                        c(reciprocity(sci.n),reciprocity(config.sci)))
+colnames(est.sci) <- c('Network', 'Density', 'Average path length', 'Transitivity', 'Reciprocity')
+est.sci
+
+# 3-9) Engineering, manufacturing and construction network
+outd.eng <- degree(eng.n, mode='out')
+config.eng <- sample_degseq(out.deg = outd.eng, in.deg = ind.eng, method = "simple")
+est.eng <- data.frame(c('Humanities & Arts', 'Humanities & ArtsConfiguration Configuration'), 
+                        c(graph.density(eng.n), graph.density(config.eng)),
+                        c(average.path.length(eng.n), average.path.length(config.eng)), 
+                        c(transitivity(eng.n), transitivity(config.eng)),
+                        c(reciprocity(eng.n),reciprocity(config.eng)))
+colnames(est.eng) <- c('Network', 'Density', 'Average path length', 'Transitivity', 'Reciprocity')
+est.eng
+
+
+```
+
+#4
+
+```{r}
+
+#4-1) Calculate the probability of a student exchange tie within and between each region (using a blockmodel approach) for the reduced network
+#Numbering regions
+V(reduced.n)$Region_new <- ifelse(V(reduced.n)$Region == "Western Europe", 1, ifelse(V(reduced.n)$Region == "Southern Europe", 2, ifelse(V(reduced.n)$Region =="Eastern Europe", 3, ifelse(V(reduced.n)$Region == "Northern Europe", 4, 99))))
+table(V(reduced.n)$Region_new)
+
+
+no.region <- as.numeric(as.factor(V(reduced.n)$Region_new))
+V(reduced.n)$Region_new <-no.region
+table(no.region)
+
+require(intergraph)
+detach(package:igraph)
+require(sna)
+
+#4-2) Blockmodel of the reduced network
+reduced.n<-asNetwork(reduced.n)
+main.stat <- asNetwork(main.n)
+bm.reduced <- blockmodel(reduced.n,ec = reduced.n %v% "Region_new", rlabels = c("Western Europe", "Southern Europe", "Eastern Europe", "Northern Europe"))$block.model
+bm.reduced
+
+
+detach(package:sna)
+detach(package:intergraph)
+require(igraph)
+require(intergraph)
+require(gplots)
+
+#4-3) Evaluating the structural equivalency of the universities using the main network.
+adjacency.main <- get.adjacency(main.n,names=TRUE)
+matrix.main<- as.matrix(adjacency.main)
+trans.main.matrix <- t(matrix.main)
+combine.main <- rbind(matrix.main, trans.main.matrix)
+
+main.distance <- as.dist(1 - cor(combine.main))
+main.distance[is.na(main.distance)] <- 2
+main.distance
+
+main.dendrogram <- hclust(main.distance)
+plot(main.dendrogram,labels= FALSE, main="Dengrogram of Structural Equivalence")
+rect.hclust(main.dendrogram, k = 6)
+summary(main.n)
+
+#4-4) Plotting the main network with nodes positioned by their latitude/longitude
+V(main.n)$Latitude <- meta_n$Latitude[match(V(main.n)$name, meta_n$Erasmus.ID)]
+V(main.n)$Longitude <- meta_n$Longitude[match(V(main.n)$name, meta_n$Erasmus.ID)]
+main.df <- data.frame('University' = V(main.n)$name, 'Longitude' = V(main.n)$Longitude, 'Latitude' = V(main.n)$Latitude)
+main.df
+
+main.graph.df <- graph.data.frame(main.df, directed=T)
+layout.n<- layout.norm(as.matrix(main.df[,2:3]))
+kolo <- rainbow(6)
+
+plot(main.n, rescale = FALSE, 
+     edge.curved = TRUE, 
+     vertex.color= kolo[cutree(main.dendrogram, k = 6)], 
+     vertex.size=6,
+     vertex.label=NA,
+     edge.width=0.2, 
+     edge.arrow.size=0.4,
+     layout=layout.n, 
+     lty= "blank", 
+     main = "Main Erasmus Network by Latitute and Longitude")
+
+legend('topright', inset=.04, legend=c("Erasmus 1", "Erasmus 2", "Erasmus 3", "Erasmus 4", "Erasmus 5", "Erasmus 6"), pch=16, col = kolo)
+
+           
+```
+
+#5 
+
+```{r}
+
+ergm.erasmus <- data.frame(cbind("Estimate" = c(-4.7409930, 0.3329028, 0.3895257, 0.0870115, -0.0016359, 0.5420552, 0.2099600, 2.5899157, 0.5478822)))
+ergm.erasmus
+
+odds.ratio <- data.frame("Odds Ratios" = exp(ergm.erasmus$Estimate))
+rownames(OddsRatio) <- c("edges", "nodeifactor.region.Eastern Europe", "nodeifactor.region.Southern Europe", "nodeifactor.region.Western Europe", "nodeicov.rank_ranked", "nodeicov.staff_scaled", "nodeicov.POI_scaled", "mutual", "gwesp.fixed.0.8")
+odds.ratio
+
+
+
+           
+```
